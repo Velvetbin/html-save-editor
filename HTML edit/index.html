@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Game Save Editor</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" id="light-style" href="light-style.css">
+    <link rel="stylesheet" id="dark-style" href="dark-style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+    <style>
+      #content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div id="output" class="alert alert-info"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <textarea id="decodedData" class="form-control"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <div class="form-group">
+              <label for="saveFileInput">Select File</label>
+              <input type="file" class="form-control-file" id="saveFileInput" onchange="loadSaveFile()"/>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <button id="saveChanges" class="btn btn-primary" onclick="saveChanges()" style="display:none;">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center">
+      <input type="checkbox" id="dark-mode-switch" value="checked" onchange="toggleDarkMode()"> Dark Mode
+    </div>
+    <script>
+      function loadSaveFile(){
+        var input = document.getElementById("saveFileInput");
+        if(input.files.length == 0){
+          return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function(){
+          try{
+            const encodedData = reader.result;
+            const extractedData = LZString.decompressFromBase64(encodedData);
+            var decodedData = JSON.parse(extractedData);
+            document.getElementById("decodedData").value = JSON.stringify(decodedData, null, 2);
+            document.getElementById("output").innerHTML += "Data loaded successfully<br>";
+            document.getElementById("saveChanges").style.display = "block";
+          }catch (error) {
+            document.getElementById("output").innerHTML += "That didn't work...<br>";
+            console.log(error);
+          }
+        }
+        reader.readAsText(input.files[0]);
+      }
+      function saveChanges(){
+        var decodedData = JSON.parse(document.getElementById("decodedData").value);
+        var jsonString = JSON.stringify(decodedData);
+        var compressedData = LZString.compressToBase64(jsonString);
+        var compressedFile = new Blob([compressedData], {type: "application/octet-stream"});
+        saveAs(compressedFile, "mygame.save");
+        document.getElementById("output").innerHTML += "Changes saved successfully<br>";
+      }
+      function toggleDarkMode() {
+    const lightStyle = document.getElementById("light-style");
+    const darkStyle = document.getElementById("dark-style");
+    if(document.getElementById("dark-mode-switch").checked){
+      lightStyle.disabled = true;
+      darkStyle.disabled = false;
+    }else {
+      lightStyle.disabled = false;
+      darkStyle.disabled = true;
+    }
+  }
+    </script>
+  </body>
+</html>
